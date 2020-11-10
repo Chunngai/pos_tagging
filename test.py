@@ -29,7 +29,7 @@ def evaluate(test_file, tokenizer_name, checkpoint_dir):
     # Evaluation.
     count_wrong = 0
     count = 0
-    with open(os.path.join(base_dir, "results.txt"), "w") as f:
+    with open(os.path.join(checkpoint_dir, "results.txt"), "w") as f:
         # TODO: Do with whole data when gpu resources are available
         for i in range(len(test_srcs)):
             # Tokenization.
@@ -72,7 +72,7 @@ def evaluate(test_file, tokenizer_name, checkpoint_dir):
             print()
             f.write("\n")
 
-    with open(os.path.join(base_dir, "accuracy.txt"), "w") as f:
+    with open(os.path.join(checkpoint_dir, "accuracy.txt"), "w") as f:
         accuracy = 1 - (count_wrong / count)
 
         print(f"accuracy: {accuracy:.2%}")
