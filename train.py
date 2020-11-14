@@ -104,7 +104,7 @@ def get_offsets_mapping(srcs, encodings, tokenizer) -> List[List[Tuple[int, int]
             end += token_len
             current_string += token
 
-            if current_string == srcs[i][0].lower():
+            if current_string == srcs[i][0].lower().replace(" ", ""):
                 end = 0
                 current_string = ""
                 srcs[i] = srcs[i][1:]
@@ -153,6 +153,9 @@ class WNUTDataset(torch.utils.data.Dataset):
 
 def train(model_name, train_file, valid_file, output_dir, logging_dir):
     """Train a model."""
+
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
     # Prepares for data.
     (
         train_srcs, valid_srcs, train_trgs, valid_trgs,
@@ -184,6 +187,7 @@ def train(model_name, train_file, valid_file, output_dir, logging_dir):
 
     # Creates a model.
     model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(unique_tags))
+    model.to(device)
 
     # Training.
     training_args = TrainingArguments(
