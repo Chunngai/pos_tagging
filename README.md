@@ -16,12 +16,12 @@ pip3 install wheel sklearn torch transformers
 python3 split.py --data-file Ind_train.txt
 ```
 
-4. Train a model. Will output a dir [RESULT_DIR].
+4. Train a model. Will output a dir [RESULT_DIR]. Specify the model with `--model`.
 ```bash
-python3 train.py --train Ind_train.train --valid Ind_train.valid
+python3 train.py --train Ind_train.train --valid Ind_train.valid --model bert-crf
 ```
 
-5. Test the model. Output of the test is saved in "[RESULT_DIR]/[CHECKPOINT_DIR]/results.txt" and the accuracy in "[RESULT_DIR]/[CHECKPOINT_DIR]/accuracy.txt".
+5. Test the model. Output of the test is saved in "[RESULT_DIR]/[CHECKPOINT_DIR]/results*.txt" and the accuracy in "[RESULT_DIR]/[CHECKPOINT_DIR]/accuracy\*.txt".
 ```bash
 python3 test.py --test Ind_train.test --checkpoint-dir ind_results/checkpoint-1500/
 ```
