@@ -1,79 +1,114 @@
 import argparse
 import os
+import time
+import re
 
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForTokenClassification
-from train import get_offsets_mapping, read_from_file
+from transformers import Trainer
+
+from utils import get_offsets_mapping, read_from_file, encode_tags
+from datasets import PosDataset
+from models import BertCRFForTokenClassification
 
 
-def evaluate(test_file, tokenizer_name, checkpoint_dir):
+def evaluate(test_file, checkpoint_dir, notes):
     """Evaluation with the trained model and test data."""
+
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     if checkpoint_dir.endswith("/"):
         checkpoint_dir = checkpoint_dir[:-1]
     base_dir = os.path.dirname(checkpoint_dir)
 
+    model_name = re.compile(r"model=(.+?)&").search(base_dir).group(1).replace("#", "/")
+
     with open(os.path.join(base_dir, "id2tag.txt")) as f:
         id2tag_dict = eval(f.read().strip())
+    tag2id_dict = {v: k for k, v in id2tag_dict.items()}
 
     # Prepares for data.
     test_srcs, test_trgs = read_from_file(test_file)
 
     # Creates a tokenizer.
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name if model_name != "bert-crf" else "cahya/bert-base-indonesian-1.5G")
+    print(tokenizer, "\n")
+    test_encodings = tokenizer(
+        test_srcs,
+        padding=True, truncation=True,
+        is_split_into_words=True
+    )
+
+    # Solves the mismatch btw tokens and labels due to tokenization.
+    test_offsets_mapping = get_offsets_mapping(test_srcs[:], test_encodings, tokenizer)
+    test_mask, test_trgs_ = encode_tags(test_trgs, tag2id_dict, test_offsets_mapping)
 
     # Creates a model.
-    model = AutoModelForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True)
+    if model_name != "bert-crf":
+        model = AutoModelForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
+    else:
+        test_encodings["pos_mask"] = test_mask
+
+        model = BertCRFForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
+    print(model, "\n")
+
+    # Creates a dataset.
+    test_dataset = PosDataset(test_encodings, test_trgs_)
 
     # Evaluation.
-    count_wrong = 0
-    count = 0
-    with open(os.path.join(checkpoint_dir, "results.txt"), "w") as f:
-        # TODO: Do with whole data when gpu resources are available
-        for i in range(len(test_srcs)):
-            # Tokenization.
-            tokens = tokenizer(
-                test_srcs[i],
-                padding=True, truncation=True,
-                is_split_into_words=True,
-                return_tensors="pt"
+    if model_name != "bert-crf":
+        trainer = Trainer(model=model)
+        output = trainer.predict(test_dataset)
+
+        outs_out = np.argmax(output.predictions, axis=2).tolist()
+
+        outs = [[] for _ in range(len(outs_out))]
+        for seq_i in range(len(outs_out)):
+            for tag_i in range(len(outs_out[seq_i])):
+                if test_mask[seq_i][tag_i]:
+                    outs[seq_i].append(id2tag_dict[outs_out[seq_i][tag_i]])
+    else:
+        outs = []
+
+        loader = DataLoader(
+            dataset=test_dataset,
+            batch_size=32,
+            shuffle=False,
+        )
+
+        model.eval()
+        for i, batch in enumerate(loader):
+            predictions = model(
+                input_ids=batch["input_ids"].to(device),
+                token_type_ids=batch["token_type_ids"].to(device),
+                attention_mask=batch["attention_mask"].to(device),
+                pos_mask=batch["pos_mask"].to(device)
             )
 
-            # Gets predictions.
-            outputs = model(**tokens).logits
-            predictions = torch.argmax(outputs, dim=2)
+            for prediction in predictions:
+                outs.append([id2tag_dict[id] for id in prediction])
 
-            # Solves the unmatch btw tokens and labels due to tokenization.
-            offsets_mapping = get_offsets_mapping([test_srcs[i]], tokens, tokenizer)[0]
-            # TODO: Merge with encode_tags
-            doc_enc_labels = np.ones(len(offsets_mapping), dtype=int) * -100
-            assert len(doc_enc_labels) == len(predictions.tolist()[0])
-            for j in range(len(offsets_mapping)):
-                if offsets_mapping[j][0] == 0 and offsets_mapping[j][1] != 0:
-                    doc_enc_labels[j] = predictions.tolist()[0][j]
+    trgs = test_trgs
+    count_right = 0
+    count_all = 0
+    with open(os.path.join(checkpoint_dir, f"results&test={os.path.basename(test_file)}{f'&notes={notes}' if notes else ''}&time={fmt_time}.txt"), "w") as f:
+        for trg_seq, out_seq in zip(trgs, outs):
+            for trg, out in zip(trg_seq, out_seq):
+                print(f"{trg}\t{out}")
+                f.write(f"{trg}\t{out}\n")
 
-            # Writes results to file.
-            for token, trg in zip(test_srcs[i], test_trgs[i]):
-                # Ignores special tokens and those starting with ##.
-                while doc_enc_labels[0] == -100:
-                    doc_enc_labels = doc_enc_labels[1:]
+                if trg == out:
+                    count_right += 1
+                count_all += 1
 
-                out = id2tag_dict[doc_enc_labels[0]]
-
-                if trg != out:
-                    count_wrong += 1
-                count += 1
-
-                print(f"{token}\t{out}")
-                f.write(f"{token}\t{out}\n")
-
-                doc_enc_labels = doc_enc_labels[1:]
             print()
             f.write("\n")
 
-    with open(os.path.join(checkpoint_dir, "accuracy.txt"), "w") as f:
-        accuracy = 1 - (count_wrong / count)
+    # test accuracy: 0.947576260516225
+    with open(os.path.join(checkpoint_dir, f"accuracy&test={os.path.basename(test_file)}{f'&notes={notes}' if notes else ''}&time={fmt_time}.txt"), "w") as f:
+        accuracy = count_right / count_all
 
         print(f"accuracy: {accuracy:.2%}")
         f.write(f"accuracy: {accuracy:.2%}")
@@ -83,12 +118,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--test", required=True, help="Test set")
     parser.add_argument("--checkpoint-dir", required=True, help="Checkpoint directory of the model to be tested")
+    parser.add_argument("--notes", default="")
     args = parser.parse_args()
 
-    tokenizer_name = "cahya/bert-base-indonesian-1.5G"
+    fmt_time = time.strftime("%m_%d_%H_%M")
 
     evaluate(
         test_file=args.test,
-        tokenizer_name=tokenizer_name,
         checkpoint_dir=args.checkpoint_dir,
+        notes=args.notes
     )
