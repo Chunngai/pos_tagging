@@ -106,7 +106,9 @@ def evaluate(test_file, checkpoint_dir, notes):
             print()
             f.write("\n")
 
-    # test accuracy: 0.947576260516225
+    # bert, epoch=3: 94.86
+    # bert-crf, epoch=3: 94.96
+    # bert-crf, epoch=5: 94.53
     with open(os.path.join(checkpoint_dir, f"accuracy&test={os.path.basename(test_file)}{f'&notes={notes}' if notes else ''}&time={fmt_time}.txt"), "w") as f:
         accuracy = count_right / count_all
 
