@@ -8,7 +8,7 @@ python3 -m venv .indonesian_pos_tagging
 
 2. Install dependencies.
 ```bash
-pip3 install wheel sklearn torch transformers
+pip3 install wheel sklearn torch transformers pytorch-crf
 ```
 
 3. Split the data into train, valid, test. The default valid and test ratio are both 0.1.
