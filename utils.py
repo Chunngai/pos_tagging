@@ -65,6 +65,8 @@ def get_offsets_mapping(srcs, encodings, tokenizer) -> List[List[Tuple[int, int]
 
             if token.startswith("##"):
                 token = token[2:]
+            elif token.startswith("▁"):
+                token = token[1:]
 
             token_len = len(token)
             offset_mapping[-1].append((end, end + token_len))
