@@ -37,3 +37,9 @@ python3 split.py --data-file Lao_train.tsv.cleaned
 python3 train.py --train Lao_train.tsv.train --valid Lao_train.tsv.valid --model xlm-roberta-base
 python3 test.py --test Lao_train.tsv.test --checkpoint-dir [RESULT_DIR]/[CHECKPOINT_DIR]
 ```
+
+### N-fold splitting
+Use `--folds` of split.py. For example:
+```bash
+python3 split.py --data-file Ind_train.txt.cleaned --folds 5
+```
