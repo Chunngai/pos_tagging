@@ -9,7 +9,7 @@ from transformers import Trainer, TrainingArguments
 
 from utils import read_from_file, get_offsets_mapping, encode_tags
 from datasets import PosDataset
-from models import BertCRFForTokenClassification
+from models import BertCRFForTokenClassification, RobertaCRFForTokenClassification
 
 
 def preprocess(train_file, valid_file) -> (List[List[str]], List[List[str]], List[List[str]], List[List[str]],
@@ -40,7 +40,7 @@ def preprocess(train_file, valid_file) -> (List[List[str]], List[List[str]], Lis
     )
 
 
-def train(model_name, train_file, valid_file, output_dir, logging_dir, epoch):
+def train(model_name, add_crf, train_file, valid_file, output_dir, logging_dir, epoch):
     """Train a model."""
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -52,7 +52,7 @@ def train(model_name, train_file, valid_file, output_dir, logging_dir, epoch):
     ) = preprocess(train_file, valid_file)
 
     # Tokenization.
-    tokenizer = AutoTokenizer.from_pretrained(model_name if model_name != "bert-crf" else "cahya/bert-base-indonesian-1.5G")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     print(tokenizer, "\n")
     train_encodings = tokenizer(
         train_srcs,
@@ -72,13 +72,18 @@ def train(model_name, train_file, valid_file, output_dir, logging_dir, epoch):
     valid_mask, valid_trgs_ = encode_tags(valid_trgs, tag2id_dict, valid_offsets_mapping)
 
     # Creates a model.
-    if model_name != "bert-crf":
+    if not add_crf:
         model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(unique_tags))
     else:
         train_encodings["pos_mask"] = train_mask
         valid_encodings["pos_mask"] = valid_mask
 
-        model = BertCRFForTokenClassification.from_pretrained("cahya/bert-base-indonesian-1.5G", num_labels=len(unique_tags)).to(device)
+        if model_name == "cahya/bert-base-indonesian-1.5G":
+            model = BertCRFForTokenClassification.from_pretrained(model_name, num_labels=len(unique_tags)).to(device)
+        elif model_name == "xlm-roberta-base":
+            model = RobertaCRFForTokenClassification.from_pretrained(model_name, num_labels=len(unique_tags)).to(device)
+        else:
+            raise NotImplementedError
     print(model, "\n")
 
     # Creates datasets.
@@ -114,18 +119,22 @@ if __name__ == '__main__':
     parser.add_argument("--train", required=True, help="Train set")
     parser.add_argument("--valid", required=True, help="Valid set")
     parser.add_argument("--model", required=True)
+    parser.add_argument("--crf", action="store_true", default=False)
     parser.add_argument("--epoch", default=3, type=int)
     parser.add_argument("--notes", default="")
     args = parser.parse_args()
 
+    add_crf = args.crf
+
     fmt_time = time.strftime("%mm%dd%HH%MM")
-    output_dir = f"results&model={args.model}&epoch={args.epoch}&train={os.path.basename(args.train)}&valid={os.path.basename(args.valid)}{f'&notes={args.notes}' if args.notes else ''}&time={fmt_time}".replace(
+    output_dir = f"results&model={args.model}{f'&CRF' if add_crf else ''}&epoch={args.epoch}&train={os.path.basename(args.train)}&valid={os.path.basename(args.valid)}{f'&notes={args.notes}' if args.notes else ''}&time={fmt_time}".replace(
         '/', '#')
-    logging_dir = f"logs&model={args.model}&epoch={args.epoch}&train={os.path.basename(args.train)}&valid={os.path.basename(args.valid)}&notes={f'&notes={args.notes}' if args.notes else ''}&time={fmt_time}".replace(
+    logging_dir = f"logs&model={args.model}{f'&CRF' if add_crf else ''}&epoch={args.epoch}&train={os.path.basename(args.train)}&valid={os.path.basename(args.valid)}&notes={f'&notes={args.notes}' if args.notes else ''}&time={fmt_time}".replace(
         '/', '#')
 
     train(
         model_name=args.model,
+        add_crf=add_crf,
         train_file=args.train,
         valid_file=args.valid,
         output_dir=output_dir,

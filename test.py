@@ -11,7 +11,7 @@ from transformers import Trainer
 
 from utils import get_offsets_mapping, read_from_file, encode_tags
 from datasets import PosDataset
-from models import BertCRFForTokenClassification
+from models import BertCRFForTokenClassification, RobertaCRFForTokenClassification
 
 
 def evaluate(test_file, checkpoint_dir, notes):
@@ -24,6 +24,7 @@ def evaluate(test_file, checkpoint_dir, notes):
     base_dir = os.path.dirname(checkpoint_dir)
 
     model_name = re.compile(r"model=(.+?)&").search(base_dir).group(1).replace("#", "/")
+    add_crf = True if re.compile(f"&CRF&").search(base_dir) is not None else False
 
     with open(os.path.join(base_dir, "id2tag.txt")) as f:
         id2tag_dict = eval(f.read().strip())
@@ -33,7 +34,7 @@ def evaluate(test_file, checkpoint_dir, notes):
     test_srcs, test_trgs = read_from_file(test_file)
 
     # Creates a tokenizer.
-    tokenizer = AutoTokenizer.from_pretrained(model_name if model_name != "bert-crf" else "cahya/bert-base-indonesian-1.5G")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     print(tokenizer, "\n")
     test_encodings = tokenizer(
         test_srcs,
@@ -46,19 +47,24 @@ def evaluate(test_file, checkpoint_dir, notes):
     test_mask, test_trgs_ = encode_tags(test_trgs, tag2id_dict, test_offsets_mapping)
 
     # Creates a model.
-    if model_name != "bert-crf":
+    if not add_crf:
         model = AutoModelForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
     else:
         test_encodings["pos_mask"] = test_mask
 
-        model = BertCRFForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
+        if model_name == "cahya/bert-base-indonesian-1.5G":
+            model = BertCRFForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
+        elif model_name == "xlm-roberta-base":
+            model = RobertaCRFForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
+        else:
+            raise NotImplementedError
     print(model, "\n")
 
     # Creates a dataset.
     test_dataset = PosDataset(test_encodings, test_trgs_)
 
     # Evaluation.
-    if model_name != "bert-crf":
+    if not add_crf:
         trainer = Trainer(model=model)
         output = trainer.predict(test_dataset)
 
@@ -81,10 +87,10 @@ def evaluate(test_file, checkpoint_dir, notes):
         model.eval()
         for i, batch in enumerate(loader):
             predictions = model(
-                input_ids=batch["input_ids"].to(device),
-                token_type_ids=batch["token_type_ids"].to(device),
-                attention_mask=batch["attention_mask"].to(device),
-                pos_mask=batch["pos_mask"].to(device)
+                input_ids=batch["input_ids"].to(device) if "input_ids" in batch.keys() else None,
+                token_type_ids=batch["token_type_ids"].to(device) if "token_type_ids" in batch.keys() else None,
+                attention_mask=batch["attention_mask"].to(device) if "attention_mask" in batch.keys() else None,
+                pos_mask=batch["pos_mask"].to(device) if "pos_mask" in batch.keys() else None
             )
 
             for prediction in predictions:
