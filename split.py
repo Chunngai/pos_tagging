@@ -5,7 +5,7 @@ import os
 from sklearn.model_selection import train_test_split
 
 
-def split_data(data_file, valid_ratio, test_ratio):
+def split_data(data_file, valid_ratio, test_ratio, folds):
     """Split data into train : valid : test."""
 
     def _read_from_file():
@@ -40,24 +40,32 @@ def split_data(data_file, valid_ratio, test_ratio):
 
     token_docs, tag_docs = _read_from_file()
 
-    train_valid_srcs, test_srcs, train_valid_trgs, test_trgs = train_test_split(token_docs, tag_docs, test_size=0.1,
-                                                                                shuffle=False)
-    train_srcs, valid_srcs, train_trgs, valid_trgs = train_test_split(train_valid_srcs, train_valid_trgs,
-                                                                      test_size=(valid_ratio) / (1 - test_ratio),
-                                                                      shuffle=False)
+    span = int(len(token_docs) / folds)
+    for i in range(folds):
+        print(f"fold {i + 1}: ")
 
-    assert len(train_srcs) == len(train_trgs)
-    assert len(valid_srcs) == len(valid_trgs)
-    assert len(test_srcs) == len(test_trgs)
+        train_valid_srcs, test_srcs, train_valid_trgs, test_trgs = train_test_split(token_docs, tag_docs, test_size=0.1,
+                                                                                    shuffle=False)
+        train_srcs, valid_srcs, train_trgs, valid_trgs = train_test_split(train_valid_srcs, train_valid_trgs,
+                                                                          test_size=(valid_ratio) / (1 - test_ratio),
+                                                                          shuffle=False)
 
-    print(f"train: {len(train_srcs)}")
-    print(f"valid: {len(valid_srcs)}")
-    print(f"test: {len(test_srcs)}")
+        assert len(train_srcs) == len(train_trgs)
+        assert len(valid_srcs) == len(valid_trgs)
+        assert len(test_srcs) == len(test_trgs)
 
-    base_name = os.path.splitext(data_file)[0]
-    _write(f"{base_name}.train", train_srcs, train_trgs)
-    _write(f"{base_name}.valid", valid_srcs, valid_trgs)
-    _write(f"{base_name}.test", test_srcs, test_trgs)
+        print(f"train: {len(train_srcs)}")
+        print(f"valid: {len(valid_srcs)}")
+        print(f"test: {len(test_srcs)}")
+
+        base_name = os.path.splitext(data_file)[0]
+        fold_ext = f'.{i + 1}' if folds > 1 else ''
+        _write(f"{base_name}.train{fold_ext}", train_srcs, train_trgs)
+        _write(f"{base_name}.valid{fold_ext}", valid_srcs, valid_trgs)
+        _write(f"{base_name}.test{fold_ext}", test_srcs, test_trgs)
+
+        token_docs = token_docs[span:] + token_docs[:span]
+        tag_docs = tag_docs[span:] + tag_docs[:span]
 
 
 if __name__ == '__main__':
@@ -65,10 +73,12 @@ if __name__ == '__main__':
     parser.add_argument("--data-file", required=True, help="Data file to split")
     parser.add_argument("--valid_ratio", default=0.1, type=float, help="Ratio of the valid set")
     parser.add_argument("--test_ratio", default=0.1, type=float, help="Ratio of the test set")
+    parser.add_argument("--folds", default=1, type=int)
     args = parser.parse_args()
 
     split_data(
         data_file=args.data_file,
         valid_ratio=args.valid_ratio,
-        test_ratio=args.test_ratio
+        test_ratio=args.test_ratio,
+        folds=args.folds
     )
