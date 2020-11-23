@@ -113,7 +113,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", required=True, help="Train set")
     parser.add_argument("--valid", required=True, help="Valid set")
-    parser.add_argument("--model", default="cahya/bert-base-indonesian-1.5G")
+    parser.add_argument("--model", required=True)
     parser.add_argument("--epoch", default=3, type=int)
     parser.add_argument("--notes", default="")
     args = parser.parse_args()
