@@ -59,7 +59,7 @@ def get_offsets_mapping(srcs, encodings, tokenizer) -> List[List[Tuple[int, int]
         current_string = ""
         for token in sentence_list[i]:
             # TODO: Support unk
-            if token in ["[CLS]", "[SEP]", "[PAD]"]:
+            if token in [tokenizer.cls_token, tokenizer.sep_token, tokenizer.pad_token]:
                 offset_mapping[-1].append((0, 0))
                 continue
 
