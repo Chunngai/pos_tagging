@@ -4,7 +4,7 @@
 ### Virtual env
 ```bash
 python3 -m venv .pos_tagging
-source .pos_tagging
+source .pos_tagging/bin/activate
 ```
 
 ### Dependencies
