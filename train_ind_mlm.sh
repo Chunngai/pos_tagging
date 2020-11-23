@@ -1,8 +1,11 @@
 #!/bin/bash
 
+set -e
+set -x
+
 if [ ! -d .mlm ]
 then
-	python -m venv .mlm
+	python3 -m venv .mlm
 fi
 source .mlm/bin/activate
 
