@@ -13,7 +13,7 @@ def read_from_file(file_path) -> (List[List[str]], List[List[str]]):
 
     with open(file_path) as f:
         # TODO: Support unk
-        raw_text = f.read().strip().replace("'", '"').replace("|", '"').replace("é", "e")
+        raw_text = f.read().strip()
     raw_docs = re.split(r"\n\t?\n", raw_text)
 
     token_docs = []
