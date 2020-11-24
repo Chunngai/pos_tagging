@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from transformers import BertForTokenClassification, BertModel, RobertaForTokenClassification, RobertaModel
+from transformers import BertForTokenClassification, BertModel, RobertaForTokenClassification, RobertaModel, \
+    XLMRobertaConfig
 from torchcrf import CRF
 
 
@@ -103,11 +104,13 @@ class BertCRFForTokenClassification(BertForTokenClassification):
             return sequence_of_tags
 
 
-class RobertaCRFForTokenClassification(RobertaForTokenClassification):
+class XLMRobertaCRFForTokenClassification(RobertaForTokenClassification):
     """RobertaForTokenClassification with a CRF layer on top."""
 
+    config_class = XLMRobertaConfig
+
     def __init__(self, config):
-        super(RobertaCRFForTokenClassification, self).__init__(config)
+        super(XLMRobertaCRFForTokenClassification, self).__init__(config)
 
         # Roberta for token classification.
         self.roberta = RobertaModel(config, add_pooling_layer=False)

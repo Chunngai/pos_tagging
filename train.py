@@ -9,7 +9,7 @@ from transformers import Trainer, TrainingArguments
 
 from utils import read_from_file, get_offsets_mapping, encode_tags
 from datasets import PosDataset
-from models import BertCRFForTokenClassification, RobertaCRFForTokenClassification
+from models import BertCRFForTokenClassification, XLMRobertaCRFForTokenClassification
 
 
 def preprocess(train_file, valid_file) -> (List[List[str]], List[List[str]], List[List[str]], List[List[str]],
@@ -72,16 +72,17 @@ def train(model_name, add_crf, train_file, valid_file, output_dir, logging_dir, 
     valid_mask, valid_trgs_ = encode_tags(valid_trgs, tag2id_dict, valid_offsets_mapping)
 
     # Creates a model.
-    if not add_crf:
-        model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(unique_tags))
-    else:
+    model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(unique_tags))
+    if add_crf:
+        print("Switching to the crf model")
+
         train_encodings["pos_mask"] = train_mask
         valid_encodings["pos_mask"] = valid_mask
 
-        if model_name == "cahya/bert-base-indonesian-1.5G":
+        if model.__class__.__name__ == "BertForTokenClassification":
             model = BertCRFForTokenClassification.from_pretrained(model_name, num_labels=len(unique_tags)).to(device)
-        elif model_name == "xlm-roberta-base":
-            model = RobertaCRFForTokenClassification.from_pretrained(model_name, num_labels=len(unique_tags)).to(device)
+        elif model.__class__.__name__ == "XLMRobertaForTokenClassification":
+            model = XLMRobertaCRFForTokenClassification.from_pretrained(model_name, num_labels=len(unique_tags)).to(device)
         else:
             raise NotImplementedError
     print(model, "\n")
@@ -99,7 +100,7 @@ def train(model_name, add_crf, train_file, valid_file, output_dir, logging_dir, 
         warmup_steps=500,  # number of warmup steps for learning rate scheduler
         weight_decay=0.01,  # strength of weight decay
         logging_dir=logging_dir,  # directory for storing logs
-        logging_steps=10,
+        logging_steps=10
     )
     trainer = Trainer(
         model=model,

@@ -11,7 +11,7 @@ from transformers import Trainer
 
 from utils import get_offsets_mapping, read_from_file, encode_tags
 from datasets import PosDataset
-from models import BertCRFForTokenClassification, RobertaCRFForTokenClassification
+from models import BertCRFForTokenClassification, XLMRobertaCRFForTokenClassification
 
 
 def evaluate(test_file, checkpoint_dir, notes):
@@ -47,15 +47,16 @@ def evaluate(test_file, checkpoint_dir, notes):
     test_mask, test_trgs_ = encode_tags(test_trgs, tag2id_dict, test_offsets_mapping)
 
     # Creates a model.
-    if not add_crf:
-        model = AutoModelForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
-    else:
+    model = AutoModelForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
+    if add_crf:
+        print("Switching to the crf model")
+
         test_encodings["pos_mask"] = test_mask
 
-        if model_name == "cahya/bert-base-indonesian-1.5G":
+        if model.__class__.__name__ == "BertForTokenClassification":
             model = BertCRFForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
-        elif model_name == "xlm-roberta-base":
-            model = RobertaCRFForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
+        elif model.__class__.__name__ == "XLMRobertaForTokenClassification":
+            model = XLMRobertaCRFForTokenClassification.from_pretrained(checkpoint_dir, return_dict=True).to(device)
         else:
             raise NotImplementedError
     print(model, "\n")
@@ -125,7 +126,7 @@ def evaluate(test_file, checkpoint_dir, notes):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--test", required=True, help="Test set")
-    parser.add_argument("--checkpoint-dir", required=True, help="Checkpoint directory of the model to be tested")
+    parser.add_argument("--ckpt-dir", required=True, help="Checkpoint directory of the model to be tested")
     parser.add_argument("--notes", default="")
     args = parser.parse_args()
 
