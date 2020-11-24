@@ -134,6 +134,6 @@ if __name__ == '__main__':
 
     evaluate(
         test_file=args.test,
-        checkpoint_dir=args.checkpoint_dir,
+        checkpoint_dir=args.ckpt_dir,
         notes=args.notes
     )
