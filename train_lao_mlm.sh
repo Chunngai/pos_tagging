@@ -3,6 +3,8 @@
 set -e
 set -x
 
+DATA_PATH="$(cd $(dirname $1); pwd)/$1"
+
 if [ ! -d .mlm ]
 then
 	python3 -m venv .mlm
@@ -18,7 +20,7 @@ fi
 cd transformers
 pip install -e . 
 
-pip install -r requirements.txt
+pip install -r examples/requirements.txt
 
 ROOT_DIR=lao_mlm
 DATA_DIR="$ROOT_DIR/data"
@@ -26,7 +28,7 @@ MODEL_DIR="$ROOT_DIR/model"
 OUTPUT_DIR="$ROOT_DIR/outputs"
 mkdir -p $ROOT_DIR $MODEL_DIR $OUTPUT_DIR $DATA_DIR
 
-cp "../$1" $DATA_DIR
+cp $DATA_PATH $DATA_DIR
 
 cd $MODEL_DIR
 
