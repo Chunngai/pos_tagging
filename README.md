@@ -1,6 +1,6 @@
 # pos_tagging
 
-## Usage
+## Pos tagging
 ### Virtual env
 ```bash
 python3 -m venv .pos_tagging
@@ -23,7 +23,7 @@ sh clean_ind.sh Ind_train.txt
 python3 split.py --data-file Ind_train.txt.cleaned
 python3 train.py --train Ind_train.txt.train --valid Ind_train.txt.valid --model cahya/bert-base-indonesian-1.5G
 # python3 train.py --train Ind_train.txt.train --valid Ind_train.txt.valid --model cahya/bert-base-indonesian-1.5G --crf
-python3 test.py --test Ind_train.txt.test --checkpoint-dir [RESULT_DIR]/[CHECKPOINT_DIR]
+python3 test.py --test Ind_train.txt.test --ckpt-dir [RESULT_DIR]/[CHECKPOINT_DIR]
 ```
 
 ### Lao
@@ -37,11 +37,23 @@ sh clean_lao.sh Lao_train.tsv
 python3 split.py --data-file Lao_train.tsv.cleaned
 python3 train.py --train Lao_train.tsv.train --valid Lao_train.tsv.valid --model xlm-roberta-base
 # python3 train.py --train Lao_train.tsv.train --valid Lao_train.tsv.valid --model xlm-roberta-base --crf
-python3 test.py --test Lao_train.tsv.test --checkpoint-dir [RESULT_DIR]/[CHECKPOINT_DIR]
+python3 test.py --test Lao_train.tsv.test --ckpt-dir [RESULT_DIR]/[CHECKPOINT_DIR]
 ```
 
 ### N-fold splitting
 Use `--folds` of split.py. For example:
 ```bash
 python3 split.py --data-file Ind_train.txt.cleaned --folds 5
+```
+
+## MLM
+For finetuning the pretrained bert models or the trained pos models.
+### Ind
+```bash
+sh train_ind_mlm.sh
+```
+
+### Lao
+```bash
+sh train_lao_mlm.sh
 ```
