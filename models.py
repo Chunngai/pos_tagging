@@ -4,6 +4,8 @@ from transformers import BertForTokenClassification, BertModel, RobertaForTokenC
     XLMRobertaConfig
 from torchcrf import CRF
 
+from utils import pad
+
 
 class BertCRFForTokenClassification(BertForTokenClassification):
     """BertForTokenClassification with a CRF layer on top."""
@@ -97,10 +99,13 @@ class BertCRFForTokenClassification(BertForTokenClassification):
 
             log_likelihood = self.crf(emissions, labels, mask=mask, reduction="mean")
             sequence_of_tags = self.crf.decode(emissions, mask=mask)
+            sequence_of_tags = pad(sequence_of_tags)
 
             return -log_likelihood, sequence_of_tags
         else:
             sequence_of_tags = self.crf.decode(emissions, mask=mask)
+            sequence_of_tags = pad(sequence_of_tags)
+
             return sequence_of_tags
 
 
@@ -202,8 +207,11 @@ class XLMRobertaCRFForTokenClassification(RobertaForTokenClassification):
 
             log_likelihood = self.crf(emissions, labels, mask=mask, reduction="mean")
             sequence_of_tags = self.crf.decode(emissions, mask=mask)
+            sequence_of_tags = pad(sequence_of_tags)
 
             return -log_likelihood, sequence_of_tags
         else:
             sequence_of_tags = self.crf.decode(emissions, mask=mask)
+            sequence_of_tags = pad(sequence_of_tags)
+
             return sequence_of_tags

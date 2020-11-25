@@ -2,6 +2,8 @@ import re
 from typing import List, Tuple
 
 import numpy as np
+import torch
+from torch.nn.utils.rnn import pad_sequence
 
 
 def read_from_file(file_path) -> (List[List[str]], List[List[str]]):
@@ -113,3 +115,22 @@ def encode_tags(tags, tag2id, offsets_mapping):
         mask.append(mask_seq)
 
     return mask, encoded_labels
+
+
+def pad(sequence):
+    return pad_sequence(
+        [torch.from_numpy(np.array(x)) for x in sequence],
+        batch_first=True,
+        padding_value=-100
+    )
+
+
+def pack(tensor):
+    batch = []
+    for seq in tensor:
+        batch.append([])
+        for elem in seq:
+            if elem.item() != -100:
+                batch[-1].append(elem.item())
+
+    return batch

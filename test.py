@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from transformers import Trainer
 
-from utils import get_offsets_mapping, read_from_file, encode_tags
+from utils import get_offsets_mapping, read_from_file, encode_tags, pack
 from datasets import PosDataset
 from models import BertCRFForTokenClassification, XLMRobertaCRFForTokenClassification
 
@@ -93,6 +93,7 @@ def evaluate(test_file, checkpoint_dir, notes):
                 attention_mask=batch["attention_mask"].to(device) if "attention_mask" in batch.keys() else None,
                 pos_mask=batch["pos_mask"].to(device) if "pos_mask" in batch.keys() else None
             )
+            predictions = pack(predictions)
 
             for prediction in predictions:
                 outs.append([id2tag_dict[id] for id in prediction])
