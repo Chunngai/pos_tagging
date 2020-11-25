@@ -4,7 +4,7 @@ import os
 from typing import List, Set, Dict
 
 import torch
-from transformers import AutoTokenizer, AutoModelForTokenClassification
+from transformers import AutoTokenizer, AutoModelForTokenClassification, EvaluationStrategy
 from transformers import Trainer, TrainingArguments
 
 from utils import read_from_file, get_offsets_mapping, encode_tags
@@ -100,7 +100,17 @@ def train(model_name, add_crf, train_file, valid_file, output_dir, logging_dir, 
         warmup_steps=500,  # number of warmup steps for learning rate scheduler
         weight_decay=0.01,  # strength of weight decay
         logging_dir=logging_dir,  # directory for storing logs
-        logging_steps=10
+        logging_steps=10,
+
+        # Eval steps. Will save a ckpt every `eval_steps`.
+        evaluation_strategy=EvaluationStrategy.STEPS,
+        eval_steps=2_000,
+
+        # Eval epochs. Will save a ckpt every `num_train_epochs`.
+        # evaluation_strategy=EvaluationStrategy.EPOCH,
+
+        metric_for_best_model="loss",
+        load_best_model_at_end=True,
     )
     trainer = Trainer(
         model=model,
