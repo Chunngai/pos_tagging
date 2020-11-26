@@ -126,11 +126,4 @@ def pad(sequence):
 
 
 def pack(tensor):
-    batch = []
-    for seq in tensor:
-        batch.append([])
-        for elem in seq:
-            if elem.item() != -100:
-                batch[-1].append(elem.item())
-
-    return batch
+    return [[elem.item() for elem in seq if elem.item() != -100] for seq in tensor]
