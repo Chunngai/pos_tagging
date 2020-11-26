@@ -45,6 +45,8 @@ python3 examples/language-modeling/run_mlm.py \
 	--train_file "$DATA_DIR/$1" \
 	--do_train \
 	--output_dir $OUTPUT_DIR \
-	--line_by_line
+	--line_by_line \
+	# TODO
+	--max_seq_length 128
 
 
