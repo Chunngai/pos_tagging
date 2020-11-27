@@ -57,3 +57,8 @@ sh train_ind_mlm.sh
 ```bash
 sh train_lao_mlm.sh
 ```
+
+## Plotting conf mx
+```bash
+python3 plot.py --id2tag-file [ID2TAG_FILE] --result-file [RESULT_FILE] --normalize --title [TITLE] --save
+```
