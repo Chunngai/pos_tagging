@@ -40,7 +40,7 @@ python3 train.py --train Lao_train.tsv.train --valid Lao_train.tsv.valid --model
 python3 test.py --test Lao_train.tsv.test --ckpt-dir [RESULT_DIR]/[CHECKPOINT_DIR]
 ```
 
-### N-fold splitting
+## N-fold splitting
 Use `--folds` of split.py. For example:
 ```bash
 python3 split.py --data-file Ind_train.txt.cleaned --folds 5
@@ -48,14 +48,14 @@ python3 split.py --data-file Ind_train.txt.cleaned --folds 5
 
 ## MLM
 For finetuning the pretrained bert models or the trained pos models.
-### Ind
 ```bash
-sh train_ind_mlm.sh
+sh train_mlm.sh [MODEL | PATH] [DATA] [MAX_SEQ_LEN] [EPOCH]
 ```
+Note that the data file should have an ext of .txt.
 
-### Lao
+E.g.
 ```bash
-sh train_lao_mlm.sh
+sh train_mlm.sh xlm-roberta-large Lao_train.mlm.txt 128 3
 ```
 
 ## Plotting conf mx
