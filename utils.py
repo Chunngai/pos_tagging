@@ -25,13 +25,19 @@ def read_from_file(file_path) -> (List[List[str]], List[List[str]]):
         tags = []
 
         for line in doc.split("\n"):
-            token, tag = line.split("\t")
-
-            tokens.append(token)
-            tags.append(tag)
+            line_split = line.strip().split("\t")
+            if len(line_split) == 2:
+                tokens.append(line_split[0])
+                tags.append(line_split[1])
+            else:
+                tokens.append(line_split[0])
+                tags = None
 
         token_docs.append(tokens)
         tag_docs.append(tags)
+
+    if not all(tag_docs):
+        tag_docs = None
 
     return token_docs, tag_docs
 
@@ -92,20 +98,24 @@ def encode_tags(tags, tag2id, offsets_mapping):
     :return: List of label lists whose lengths are the same as the corresponding token lists.
     """
 
-    # TODO: Support param for tag id lists.
-    labels = [[tag2id[tag] for tag in doc] for doc in tags]
+    if tags:
+        # TODO: Support param for tag id lists.
+        labels = [[tag2id[tag] for tag in doc] for doc in tags]
+        encoded_labels = []
+
+        for doc_labels, doc_offset in zip(labels, offsets_mapping):
+            # create an empty array of -100
+            doc_enc_labels = np.ones(len(doc_offset), dtype=int) * -100
+            arr_offset = np.array(doc_offset)
+
+            # set labels whose first offset position is 0 and the second is not 0
+            doc_enc_labels[(arr_offset[:, 0] == 0) & (arr_offset[:, 1] != 0)] = doc_labels
+            encoded_labels.append(doc_enc_labels.tolist())
+    else:
+        encoded_labels = None
+
     mask = []
-    encoded_labels = []
-
-    for doc_labels, doc_offset in zip(labels, offsets_mapping):
-        # create an empty array of -100
-        doc_enc_labels = np.ones(len(doc_offset), dtype=int) * -100
-        arr_offset = np.array(doc_offset)
-
-        # set labels whose first offset position is 0 and the second is not 0
-        doc_enc_labels[(arr_offset[:, 0] == 0) & (arr_offset[:, 1] != 0)] = doc_labels
-        encoded_labels.append(doc_enc_labels.tolist())
-
+    for doc_offset in offsets_mapping:
         mask_seq = []
         for offset in doc_offset:
             if offset[0] == 0 and offset[1] != 0:

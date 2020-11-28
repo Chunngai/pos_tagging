@@ -102,26 +102,36 @@ def evaluate(test_file, checkpoint_dir, notes):
     count_right = 0
     count_all = 0
     with open(os.path.join(checkpoint_dir, f"results&test={os.path.basename(test_file)}{f'&notes={notes}' if notes else ''}&time={fmt_time}.txt"), "w") as f:
-        for trg_seq, out_seq in zip(trgs, outs):
-            for trg, out in zip(trg_seq, out_seq):
-                print(f"{trg}\t{out}")
-                f.write(f"{trg}\t{out}\n")
+        if trgs:
+            for trg_seq, out_seq in zip(trgs, outs):
+                for trg, out in zip(trg_seq, out_seq):
+                    print(f"{trg}\t{out}")
+                    f.write(f"{trg}\t{out}\n")
 
-                if trg == out:
-                    count_right += 1
-                count_all += 1
+                    if trg == out:
+                        count_right += 1
+                    count_all += 1
 
-            print()
-            f.write("\n")
+                print()
+                f.write("\n")
+        else:
+            for out_seq in outs:
+                for out in out_seq:
+                    print(f"{out}")
+                    f.write(f"{out}\n")
+
+                print()
+                f.write("\n")
 
     # bert, epoch=3: 94.86
     # bert-crf, epoch=3: 94.96
     # bert-crf, epoch=5: 94.53
-    with open(os.path.join(checkpoint_dir, f"accuracy&test={os.path.basename(test_file)}{f'&notes={notes}' if notes else ''}&time={fmt_time}.txt"), "w") as f:
-        accuracy = count_right / count_all
+    if trgs:
+        with open(os.path.join(checkpoint_dir, f"accuracy&test={os.path.basename(test_file)}{f'&notes={notes}' if notes else ''}&time={fmt_time}.txt"), "w") as f:
+            accuracy = count_right / count_all
 
-        print(f"accuracy: {accuracy:.2%}")
-        f.write(f"accuracy: {accuracy:.2%}")
+            print(f"accuracy: {accuracy:.2%}")
+            f.write(f"accuracy: {accuracy:.2%}")
 
 
 if __name__ == '__main__':
