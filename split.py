@@ -44,25 +44,46 @@ def split_data(data_file, valid_ratio, test_ratio, folds):
     for i in range(folds):
         print(f"fold {i + 1}: ")
 
-        train_valid_srcs, test_srcs, train_valid_trgs, test_trgs = train_test_split(token_docs, tag_docs, test_size=0.1,
-                                                                                    shuffle=False)
-        train_srcs, valid_srcs, train_trgs, valid_trgs = train_test_split(train_valid_srcs, train_valid_trgs,
-                                                                          test_size=(valid_ratio) / (1 - test_ratio),
-                                                                          shuffle=False)
+        if test_ratio > 0:
+            (
+                train_valid_srcs, test_srcs,
+                train_valid_trgs, test_trgs
+            ) = train_test_split(
+                token_docs, tag_docs,
+                test_size=test_ratio, shuffle=False
+            )
+
+            (
+                train_srcs, valid_srcs,
+                train_trgs, valid_trgs
+            ) = train_test_split(
+                train_valid_srcs, train_valid_trgs,
+                test_size=valid_ratio / (1 - test_ratio), shuffle=False
+            )
+        else:
+            (
+                train_srcs, valid_srcs,
+                train_trgs, valid_trgs
+            ) = train_test_split(token_docs, tag_docs,
+                                 test_size=valid_ratio / (1 - test_ratio), shuffle=False
+                                 )
 
         assert len(train_srcs) == len(train_trgs)
         assert len(valid_srcs) == len(valid_trgs)
-        assert len(test_srcs) == len(test_trgs)
+        if test_ratio > 0:
+            assert len(test_srcs) == len(test_trgs)
 
         print(f"train: {len(train_srcs)}")
         print(f"valid: {len(valid_srcs)}")
-        print(f"test: {len(test_srcs)}")
+        if test_ratio > 0:
+            print(f"test: {len(test_srcs)}")
 
         base_name = os.path.splitext(data_file)[0]
         fold_ext = f'.{i + 1}' if folds > 1 else ''
-        _write(f"{base_name}.train{fold_ext}", train_srcs, train_trgs)
-        _write(f"{base_name}.valid{fold_ext}", valid_srcs, valid_trgs)
-        _write(f"{base_name}.test{fold_ext}", test_srcs, test_trgs)
+        _write(f"{base_name}.{1 - valid_ratio - test_ratio}.train{fold_ext}", train_srcs, train_trgs)
+        _write(f"{base_name}.{valid_ratio}.valid{fold_ext}", valid_srcs, valid_trgs)
+        if test_ratio > 0:
+            _write(f"{base_name}.{test_ratio}.test{fold_ext}", test_srcs, test_trgs)
 
         token_docs = token_docs[span:] + token_docs[:span]
         tag_docs = tag_docs[span:] + tag_docs[:span]
