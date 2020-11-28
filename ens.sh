@@ -8,7 +8,10 @@ for f in $TXTS
 do
 	dos2unix $f
 
-	awk -F $'\t' '{print $2}' $f > "$f.out"
+	OUT="$f.out"
+	echo "$f" > $OUT
+	echo -e "\n" >> $OUT
+	awk -F $'\t' '{print $2}' $f >> $OUT
 done
 
 OUTS=`ls *.out | sort -n`
