@@ -109,6 +109,7 @@ def train(model_name, add_crf, train_file, valid_file, output_dir, logging_dir, 
         # Eval epochs. Will save a ckpt every `num_train_epochs`.
         # evaluation_strategy=EvaluationStrategy.EPOCH,
 
+        save_total_limit=10,
         metric_for_best_model="loss",
         load_best_model_at_end=True,
     )
