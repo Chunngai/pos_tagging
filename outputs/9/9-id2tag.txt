@@ -1,1 +1,0 @@
-{0: 'PRS', 1: 'N', 2: 'IBQ', 3: 'ONM', 4: 'PVA', 5: 'V', 6: 'PUNCT', 7: 'CNM', 8: 'CLF', 9: 'PRN', 10: 'DAQ', 11: 'NEG', 12: 'IAC', 13: 'ADJ', 14: 'PRA', 15: 'DBQ', 16: 'TTL', 17: 'DMN', 18: 'COJ', 19: 'REL', 20: 'ADV', 21: 'FIX', 22: 'NTR', 23: 'PRE', 24: 'IAQ', 25: 'DAN'}

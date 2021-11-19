@@ -33,5 +33,5 @@ python3 examples/language-modeling/run_mlm.py \
 	--output_dir $OUTPUT_DIR \
 	--line_by_line \
 	--max_seq_length $3 \
-	--num_train_epochs $4
-
+	--num_train_epochs $4 \
+	--save_steps 10000

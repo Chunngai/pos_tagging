@@ -50,7 +50,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--id2tag-file", required=True)
     parser.add_argument("--result-file", required=True)
-    parser.add_argument("--normalize", action="store_true", default=True)
+    parser.add_argument("--normalize", action="store_true", default=False)
     parser.add_argument("--title", type=str, default="")
     parser.add_argument("--save", action="store_true", default=False)
     parser.add_argument("--precise", action="store_true", default=False)
